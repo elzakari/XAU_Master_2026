@@ -448,7 +448,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    if(dir == XAU_BUY)
      {
       // Bullish Engulfing
-      bool engulfing = (c1 > o1) && (c1 > o2) && (o1 < c2); // Basic engulfing definition from prompt
+      bool engulfing = (c1 > o1) && (c1 > o2) && (o1 < c2) && (c1 > h2); // Stronger engulfing: close above previous high
       
       if(engulfing)
         {
@@ -459,7 +459,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
         {
          // Bullish Pin Bar
          // (close[1] - open[1]) < (open[1] - low[1]) * 0.33
-         if( (c1 - o1) < (o1 - l1) * 0.33 )
+         if( (c1 > o1) && ((h1 - c1) < (o1 - l1) * 0.33) && ((c1 - o1) < (o1 - l1) * 0.5) )
            {
             pattern_found = true;
             pattern_name = "PIN";
@@ -469,7 +469,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    else if(dir == XAU_SELL)
      {
       // Bearish Engulfing
-      bool engulfing = (c1 < o1) && (c1 < o2) && (o1 > c2);
+      bool engulfing = (c1 < o1) && (c1 < o2) && (o1 > c2) && (c1 < l2); // Stronger engulfing: close below previous low
       
       if(engulfing)
         {
@@ -479,7 +479,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
       else
         {
          // Bearish Pin Bar (Mirror)
-         if( (o1 - c1) < (h1 - o1) * 0.33 )
+         if( (o1 > c1) && ((c1 - l1) < (h1 - o1) * 0.33) && ((o1 - c1) < (h1 - o1) * 0.5) )
            {
             pattern_found = true;
             pattern_name = "PIN";
