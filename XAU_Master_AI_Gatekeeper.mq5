@@ -213,7 +213,13 @@ void OnTick()
     }
 }
 
-// Handle exit event logic
+void OnDeinit(const int reason)
+{
+    if(InpUseAI && m_onnx_handle != INVALID_HANDLE)
+    {
+        OnnxRelease(m_onnx_handle);
+    }
+}
 void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest &req, const MqlTradeResult &res)
 {
     if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
