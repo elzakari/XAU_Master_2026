@@ -441,6 +441,8 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    
    double c2 = m1_rates[1].close;
    double o2 = m1_rates[1].open;
+   double h2 = m1_rates[1].high;
+   double l2 = m1_rates[1].low;
    
    string pattern_name = "";
    bool pattern_found = false;
