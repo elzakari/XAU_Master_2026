@@ -33,13 +33,13 @@ CTrade trade;
 bool   g_tradingEnabled = true;
 
 //--- Include project headers
-#include "XAU_Master_Core.mqh"
-#include "XAU_Risk_Manager.mqh"
-#include "XAU_HUD_Panel.mqh"
-#include "XAU_News_Filter.mqh"
-#include "XAU_DXY_Monitor.mqh"
-#include "XAU_Logger.mqh"
-#include "XAU_AI_Engine.mqh"
+#include <XAU_Master_Core.mqh>
+#include <XAU_Risk_Manager.mqh>
+#include <XAU_HUD_Panel.mqh>
+#include <XAU_News_Filter.mqh>
+#include <XAU_DXY_Monitor.mqh>
+#include <XAU_Logger.mqh>
+#include <XAU_AI_Engine.mqh>
 
 //+------------------------------------------------------------------+
 //| Helper: Close All Positions                                      |
