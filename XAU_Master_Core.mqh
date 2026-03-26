@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                            XAU_Master_Core.mqh   |
 //|                                  Copyright 2026, XAU_Master_2026 |
 //|                          Shared signal engine for XAU_Master_2026|
@@ -27,8 +27,8 @@ double g_CoreTestMode = 0.0; // Global flag for Test Mode
 #define XAU_RR_TARGET       2.0
 #define XAU_BREAKEVEN_RR    1.0
 #define XAU_MAX_DAILY_LOSS  3.0
-#define XAU_SESSION_START   13    // GMT hour — London/NY overlap open
-#define XAU_SESSION_END     17    // GMT hour — London/NY overlap close
+#define XAU_SESSION_START   13    // GMT hour â€” London/NY overlap open
+#define XAU_SESSION_END     17    // GMT hour â€” London/NY overlap close
 #define XAU_LONDON_START    8
 #define XAU_LONDON_END      10
 #define XAU_DEAD_START      21
@@ -239,7 +239,7 @@ bool CheckLock2(ENUM_XAU_SIGNAL dir)
    // We need bars from index 1 (previous closed) up to XAU_SWEEP_BARS + 1.
    // Total bars to retrieve = XAU_SWEEP_BARS + 2 (indices 0 to XAU_SWEEP_BARS+1, where 0 is current bar?).
    // No, prompt says "retrieve the last (XAU_SWEEP_BARS + 2) closed candles".
-   // "Only analyse closed candles — never bar[0]."
+   // "Only analyse closed candles â€” never bar[0]."
    // So we copy starting from index 1.
    
    int req_bars = XAU_SWEEP_BARS + 2; // e.g., 30 + 2 = 32
@@ -487,7 +487,7 @@ XAU_SignalResult EvaluateSignal()
    result.atrValue = 0.0;
    result.reason = "";
    
-   // 1. Guard — only evaluate on new bar open
+   // 1. Guard â€” only evaluate on new bar open
    static datetime lastBarTime = 0;
    datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
    

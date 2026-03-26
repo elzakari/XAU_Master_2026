@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+﻿//+------------------------------------------------------------------+
 //|                                   XAU_Master_AI_Gatekeeper.mq5   |
 //|                                   Copyright 2026, XAU_Master_2026|
 //|                          Powered by Neural Gatekeeper (ONNX)     |
@@ -74,7 +74,7 @@ int CountOpenPositions()
 //+------------------------------------------------------------------+
 //| Main Execution Logic                                             |
 //+------------------------------------------------------------------+
-int OnInit()
+int OnInit(void)
 {
     trade.SetExpertMagicNumber(InpMagicNumber);
 
@@ -116,7 +116,7 @@ int OnInit()
     return(INIT_SUCCEEDED);
 }
 
-void OnTick()
+void OnTick(void)
 {
     // Ensure Test Mode is OFF
     g_CoreTestMode = 0.0;
@@ -220,6 +220,7 @@ void OnDeinit(const int reason)
         OnnxRelease(m_onnx_handle);
     }
 }
+
 void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest &req, const MqlTradeResult &res)
 {
     if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
