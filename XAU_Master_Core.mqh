@@ -112,18 +112,18 @@ bool CheckMacroBias(ENUM_XAU_SIGNAL dir)
    // Index 0 in 'rates' array corresponds to bar 1 (latest closed), Index 1 corresponds to bar 2
    if(dir == XAU_BUY)
      {
-      // Check for Higher Closes (Uptrend Structure)
-      if(rates[0].close <= rates[1].close)
+      // Check for Higher Highs (Uptrend Structure)
+      if(rates[0].high <= rates[1].high)
         {
-         return(false); // Not a higher close
+         return(false); // Not a higher high
         }
      }
    else if(dir == XAU_SELL)
      {
-      // Check for Lower Closes (Downtrend Structure)
-      if(rates[0].close >= rates[1].close)
+      // Check for Lower Lows (Downtrend Structure)
+      if(rates[0].low >= rates[1].low)
         {
-         return(false); // Not a lower close
+         return(false); // Not a lower low
         }
      }
 
@@ -401,33 +401,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
       if( ! (hook_down && in_zone) ) return(false);
      }
      
-   // 2. Stochastic Timing (M1)
-   // Stochastic(5,3,3)
-   double stoch_buf[];
-   ArraySetAsSeries(stoch_buf, true);
-   int h_stoch = iStochastic(_Symbol, PERIOD_M1, 5, 3, 3, MODE_SMA, STO_LOWHIGH);
-   
-   if(h_stoch == INVALID_HANDLE) return(false);
-   
-   if(CopyBuffer(h_stoch, 0, 1, 2, stoch_buf) < 2) return(false); // MAIN line (buffer 0)
-   
-   double stoch_1 = stoch_buf[0];
-   double stoch_2 = stoch_buf[1];
-   
-   if(dir == XAU_BUY)
-     {
-      // stoch_main[1] < 40 OR (stoch_main[2] < 20 AND stoch_main[1] > 20)
-      bool cond = (stoch_1 < 40.0) || (stoch_2 < 20.0 && stoch_1 > 20.0);
-      if(!cond) return(false);
-     }
-   else if(dir == XAU_SELL)
-     {
-      // stoch_main[1] > 60 OR (stoch_main[2] > 80 AND stoch_main[1] < 80)
-      bool cond = (stoch_1 > 60.0) || (stoch_2 > 80.0 && stoch_1 < 80.0);
-      if(!cond) return(false);
-     }
-     
-   // 3. Candle Pattern (M1, Bar 1)
+   // 2. Candle Pattern (M1, Bar 1)
    // Need Open, Close, High, Low of Bar[1] and Bar[2]
    MqlRates m1_rates[];
    ArraySetAsSeries(m1_rates, true);
@@ -444,13 +418,17 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    double h2 = m1_rates[1].high;
    double l2 = m1_rates[1].low;
    
+   double body1 = MathAbs(c1 - o1);
+   double lower_wick1 = MathMin(c1, o1) - l1;
+   double upper_wick1 = h1 - MathMax(c1, o1);
+   
    string pattern_name = "";
    bool pattern_found = false;
    
    if(dir == XAU_BUY)
      {
-      // Bullish Engulfing
-      bool engulfing = (c1 > o1) && (c1 > o2) && (o1 < c2) && (c1 > h2); // Stronger engulfing: close above previous high
+      // Bullish Engulfing: C1 green, C2 red, Body 1 engulfs Body 2
+      bool engulfing = (c1 > o1) && (o2 > c2) && (c1 >= o2) && (o1 <= c2);
       
       if(engulfing)
         {
@@ -459,9 +437,9 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
         }
       else
         {
-         // Bullish Pin Bar
-         // (close[1] - open[1]) < (open[1] - low[1]) * 0.33
-         if( (c1 > o1) && ((h1 - c1) < (o1 - l1) * 0.33) && ((c1 - o1) < (o1 - l1) * 0.5) )
+         // Bullish Pin Bar: Long lower wick, small body at the top
+         bool pin_bar = (lower_wick1 > 2.0 * body1) && (upper_wick1 < body1) && (c1 > o1); // Prefer green pin bar for strength
+         if(pin_bar)
            {
             pattern_found = true;
             pattern_name = "PIN";
@@ -470,8 +448,8 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
      }
    else if(dir == XAU_SELL)
      {
-      // Bearish Engulfing
-      bool engulfing = (c1 < o1) && (c1 < o2) && (o1 > c2) && (c1 < l2); // Stronger engulfing: close below previous low
+      // Bearish Engulfing: C1 red, C2 green, Body 1 engulfs Body 2
+      bool engulfing = (c1 < o1) && (c2 > o2) && (o1 >= c2) && (c1 <= o2);
       
       if(engulfing)
         {
@@ -480,8 +458,9 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
         }
       else
         {
-         // Bearish Pin Bar (Mirror)
-         if( (o1 > c1) && ((c1 - l1) < (h1 - o1) * 0.33) && ((o1 - c1) < (h1 - o1) * 0.5) )
+         // Bearish Pin Bar: Long upper wick, small body at the bottom
+         bool pin_bar = (upper_wick1 > 2.0 * body1) && (lower_wick1 < body1) && (c1 < o1); // Prefer red pin bar for strength
+         if(pin_bar)
            {
             pattern_found = true;
             pattern_name = "PIN";
