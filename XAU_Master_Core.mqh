@@ -381,10 +381,10 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
      {
       // Updated Logic: "Hooking up from the 40-50 zone"
       // 1. Hook Up: RSI[1] > RSI[2]
-      // 2. Zone: RSI[1] is between 35 and 65 (slightly widened zone)
+      // 2. Zone: RSI[1] is between 30 and 70 (widened for M1)
       
       bool hook_up = (rsi_1 > rsi_2);
-      bool in_zone = (rsi_1 >= 35.0 && rsi_1 <= 65.0);
+      bool in_zone = (rsi_1 >= 30.0 && rsi_1 <= 70.0);
       
       if( ! (hook_up && in_zone) ) return(false);
      }
@@ -392,10 +392,10 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
      {
       // Updated Logic: "Hooking down from the 50-60 zone"
       // 1. Hook Down: RSI[1] < RSI[2]
-      // 2. Zone: RSI[1] is between 35 and 65
+      // 2. Zone: RSI[1] is between 30 and 70 (widened for M1)
       
       bool hook_down = (rsi_1 < rsi_2);
-      bool in_zone   = (rsi_1 >= 35.0 && rsi_1 <= 65.0);
+      bool in_zone   = (rsi_1 >= 30.0 && rsi_1 <= 70.0);
       
       if( ! (hook_down && in_zone) ) return(false);
      }
@@ -428,7 +428,8 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
      {
       // Bullish Engulfing: C1 green, C2 red, Body 1 engulfs Body 2
       // Relaxed to only require C1 > O2, O1 < C2 to be more permissive on M1 timeframe
-      bool engulfing = (c1 > o1) && (o2 > c2) && (c1 > o2) && (o1 < c2);
+      // Further relaxed: just need C1 > O2 to show upward momentum after sweep
+      bool engulfing = (c1 > o1) && (o2 > c2) && (c1 > o2);
       
       if(engulfing)
         {
@@ -439,7 +440,8 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
         {
          // Bullish Pin Bar: Long lower wick, small body at the top
          // Relaxed lower wick requirement slightly from 2.0 to 1.5 for M1 timeframe
-         bool pin_bar = (lower_wick1 > 1.5 * body1) && (upper_wick1 < body1) && (c1 > o1); // Prefer green pin bar for strength
+         // Further relaxed: just check lower wick is larger than body
+         bool pin_bar = (lower_wick1 > body1) && (upper_wick1 < body1) && (c1 >= o1); 
          if(pin_bar)
            {
             pattern_found = true;
@@ -450,7 +452,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    else if(dir == XAU_SELL)
      {
       // Bearish Engulfing: C1 red, C2 green, Body 1 engulfs Body 2
-      bool engulfing = (c1 < o1) && (c2 > o2) && (o1 > c2) && (c1 < o2);
+      bool engulfing = (c1 < o1) && (c2 > o2) && (c1 < o2);
       
       if(engulfing)
         {
@@ -460,7 +462,7 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
       else
         {
          // Bearish Pin Bar: Long upper wick, small body at the bottom
-         bool pin_bar = (upper_wick1 > 1.5 * body1) && (lower_wick1 < body1) && (c1 < o1); // Prefer red pin bar for strength
+         bool pin_bar = (upper_wick1 > body1) && (lower_wick1 < body1) && (c1 <= o1);
          if(pin_bar)
            {
             pattern_found = true;
