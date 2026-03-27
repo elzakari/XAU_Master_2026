@@ -558,6 +558,11 @@ XAU_SignalResult EvaluateSignal()
        res.reason = "Sweep_Upthrust_L2";
        Print("AGGRESSIVE SELL SIGNAL TRIGGERED: RSI=", rsi, " SweepHigh=", localHigh);
    }
+   else 
+   {
+       // Debug print so we can see what the scanner is seeing on every bar
+       // Print("Scanner Active: RSI=", rsi, " Low=", rates[1].low, " LocalLow=", localLow, " High=", rates[1].high, " LocalHigh=", localHigh);
+   }
 
    return res;
   }
