@@ -99,6 +99,12 @@ bool CheckMacroBias(ENUM_XAU_SIGNAL dir)
    }
 
    // 3. Higher Timeframe Structure (M15)
+   if(!GlobalVariableGet("XAU_USE_TREND_FILTER"))
+   {
+       // If trend filter is disabled via EA inputs, skip macro structure check
+       return(true);
+   }
+
    MqlRates rates[];
    ArraySetAsSeries(rates, true);
    int copied = CopyRates(_Symbol, PERIOD_M15, 1, 2, rates); // Get last 2 closed bars (indices 1 and 2)
@@ -140,6 +146,8 @@ bool CheckLock1(ENUM_XAU_SIGNAL dir)
    // 0. Test Mode Bypass
    // if(g_CoreTestMode > 0.5) return(true); // Reverted to prevent crash
 
+   // 0.5 Skip EMA Check if Trend Filter is Disabled
+   bool use_trend = GlobalVariableGet("XAU_USE_TREND_FILTER") > 0.5;
 
    // 1. Initialize EMA Handles (Static Cache)
    static int h_ema_fast = INVALID_HANDLE;
@@ -184,9 +192,12 @@ bool CheckLock1(ENUM_XAU_SIGNAL dir)
    double ema_fast_val = fast_buf[0];
    double ema_slow_val = slow_buf[0];
 
-   // EMA Cloud Alignment
-   if(dir == XAU_BUY && ema_fast_val <= ema_slow_val) return(false);
-   if(dir == XAU_SELL && ema_fast_val >= ema_slow_val) return(false);
+   // EMA Cloud Alignment (Only if Trend Filter is enabled)
+   if(use_trend)
+   {
+       if(dir == XAU_BUY && ema_fast_val <= ema_slow_val) return(false);
+       if(dir == XAU_SELL && ema_fast_val >= ema_slow_val) return(false);
+   }
 
    // 3. VWAP Position
    double vwap = GlobalVariableGet("XAU_DAILY_VWAP");

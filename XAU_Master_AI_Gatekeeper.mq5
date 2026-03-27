@@ -16,13 +16,13 @@ input int    InpMagicNumber    = 202602; // Magic Number
 input double InpMaxDailyLoss   = 5.0;   // Max Daily Loss (%)
 
 input string Inp_Strategy_Settings = "=== Strategy Settings ==="; // .
-input bool   InpUseTrendFilter = true;  // Use EMA Trend Filter
+input bool   InpUseTrendFilter = false;  // Use EMA Trend Filter (Relaxed)
 input bool   InpUseNewsFilter  = true;  // Use News Filter
 
 input string Inp_AI_Settings   = "=== AI Gatekeeper ==="; // .
 input bool   InpUseAI          = true;  // Enable ONNX Vibe Check
 input string InpONNXFile       = "gold_vibe.onnx"; // ONNX Model File
-input float  InpAIThreshold    = 0.72f; // Minimum AI Confidence (0.0 to 1.0)
+input float  InpAIThreshold    = 0.60f; // Minimum AI Confidence (0.0 to 1.0) (Relaxed)
 
 input string Inp_System_Settings = "=== System Settings ==="; // .
 input bool   InpShowHUD        = true;  // Show Info Panel
@@ -80,6 +80,9 @@ int OnInit(void)
 
     // Init Info
     Print("XAU_Master AI Gatekeeper v1.01 | Magic:", InpMagicNumber, " | Risk:", InpRiskPct, "%");
+
+    // Pass EA settings to Core via Global Variables
+    GlobalVariableSet("XAU_USE_TREND_FILTER", InpUseTrendFilter ? 1.0 : 0.0);
 
     // Check Build for News Filter
     if(TerminalInfoInteger(TERMINAL_BUILD) < 2260)

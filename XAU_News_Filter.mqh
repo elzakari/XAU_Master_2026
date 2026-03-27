@@ -11,7 +11,7 @@
 //+------------------------------------------------------------------+
 //| Check High Impact News                                           |
 //+------------------------------------------------------------------+
-bool IsHighImpactNewsActive(int bufferMinutes = 30)
+bool IsHighImpactNewsActive(int bufferMinutes = 15)
   {
    // Check if Calendar API is available
    // We can't easily check 'enabled' status without static flag set in OnInit.
@@ -105,7 +105,7 @@ void UpdateNewsGlobal()
    // But signature in prompt is `void UpdateNewsGlobal()`.
    // I will use default 15 here.
    
-   IsHighImpactNewsActive(30);
+   IsHighImpactNewsActive(15);
   }
 
 //+------------------------------------------------------------------+
