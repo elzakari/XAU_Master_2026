@@ -544,6 +544,7 @@ XAU_SignalResult EvaluateSignal()
        res.stopLoss = localLow - (res.atrValue * 0.1); // Just below sweep
        res.takeProfit = res.entryPrice + (res.entryPrice - res.stopLoss) * 2.0;
        res.reason = "Sweep_Spring_L2";
+       Print("AGGRESSIVE BUY SIGNAL TRIGGERED: RSI=", rsi, " SweepLow=", localLow);
    }
    
    // 4. SELL SIGNAL: The "Upthrust" Pattern
@@ -555,6 +556,7 @@ XAU_SignalResult EvaluateSignal()
        res.stopLoss = localHigh + (res.atrValue * 0.1); // Just above sweep
        res.takeProfit = res.entryPrice - (res.stopLoss - res.entryPrice) * 2.0;
        res.reason = "Sweep_Upthrust_L2";
+       Print("AGGRESSIVE SELL SIGNAL TRIGGERED: RSI=", rsi, " SweepHigh=", localHigh);
    }
 
    return res;

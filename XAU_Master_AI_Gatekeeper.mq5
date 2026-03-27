@@ -176,11 +176,11 @@ void OnTick(void)
                 vibe_features[4] = GetTimeOfDayVibe();
 
                 float confidence = PredictVibe(vibe_features);
-                
+
                 if(confidence < InpAIThreshold)
                 {
                     ai_passed = false;
-                    Print("AI Vibe Check FAILED (Confidence: ", confidence, " < ", InpAIThreshold, "). Signal ignored.");
+                    Print("AI Vibe Check FAILED (Confidence: ", confidence, " < ", InpAIThreshold, "). Blocked.");
                 }
                 else
                 {
