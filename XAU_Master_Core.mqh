@@ -490,150 +490,74 @@ bool CheckLock3(ENUM_XAU_SIGNAL dir)
    return(true);
   }
 
-/**
- * Main signal evaluation function.
- * @return XAU_SignalResult structure with trade details.
- */
+//+------------------------------------------------------------------+
+//| Enhanced Signal Evaluation (Aggressive Version)                  |
+//+------------------------------------------------------------------+
 XAU_SignalResult EvaluateSignal()
   {
-   XAU_SignalResult result;
-   result.signal = XAU_NO_SIGNAL;
-   result.entryPrice = 0.0;
-   result.stopLoss = 0.0;
-   result.takeProfit = 0.0;
-   result.atrValue = 0.0;
-   result.reason = "";
-   
-   // 1. Guard â€” only evaluate on new bar open
+   XAU_SignalResult res;
+   res.signal = XAU_NO_SIGNAL;
+   res.entryPrice = 0.0;
+   res.stopLoss = 0.0;
+   res.takeProfit = 0.0;
+   res.atrValue = 0.0;
+   res.reason = "";
+
+   // 1. Guard \u2014 only evaluate on new bar open
    static datetime lastBarTime = 0;
    datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
-   
-   if(currentBarTime == lastBarTime) return(result); // Return empty
+
+   if(currentBarTime == lastBarTime) return(res); // Return empty
    lastBarTime = currentBarTime;
-   
-   // 2. Update VWAP
-   CalcDailyVWAP();
-   
-   // 3. Test BUY
-   bool b_macro = CheckMacroBias(XAU_BUY);
-   bool b_l1    = CheckLock1(XAU_BUY);
-   bool b_l2    = CheckLock2(XAU_BUY);
-   bool b_l3    = CheckLock3(XAU_BUY);
 
-   // Force Override in Test Mode (REVERTED FOR REAL LOGIC)
-   if(g_CoreTestMode > 0.5)
-   {
-       // b_macro = true; // Still bypass macro
-       // b_l1 = true; // Reverted: Trend Check active
-       // b_l3 = true; // Reverted: RSI Check active
-       if(b_l2) Print("TEST MODE: Macro Bypass Only. Sweep found.");
+   // 1. Load sufficient history for sweep detection
+   MqlRates rates[];
+   ArraySetAsSeries(rates, true);
+   if(CopyRates(_Symbol, PERIOD_CURRENT, 0, 40, rates) < 40) return res;
+
+   // Indicators for confirmation
+   double rsi_buf[];
+   int h_rsi = iRSI(_Symbol, PERIOD_CURRENT, 14, PRICE_CLOSE);
+   CopyBuffer(h_rsi, 0, 1, 1, rsi_buf);
+   double rsi = rsi_buf[0];
+
+   // ATR for dynamic risk
+   double atr_buf[];
+   int h_atr = iATR(_Symbol, PERIOD_CURRENT, 14);
+   CopyBuffer(h_atr, 0, 1, 1, atr_buf);
+   res.atrValue = atr_buf[0];
+
+   // 2. Identify Local Liquidity Zones (Looking back 25 bars)
+   double localLow = rates[1].low;
+   double localHigh = rates[1].high;
+   for(int i=2; i<25; i++) {
+       if(rates[i].low < localLow) localLow = rates[i].low;
+       if(rates[i].high > localHigh) localHigh = rates[i].high;
    }
 
-   if(b_macro && b_l1 && b_l2 && b_l3)
-     {
-      result.signal = XAU_BUY;
-      result.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-      
-      // Get ATR
-      double atr_buf[];
-      int h_atr = iATR(_Symbol, PERIOD_CURRENT, XAU_ATR_PERIOD);
-      CopyBuffer(h_atr, 0, 1, 1, atr_buf); // Bar[1]
-      result.atrValue = atr_buf[0];
-      
-      // SL: Just past sweep wick or 1.5x ATR
-      double sweepLevel = GlobalVariableGet("XAU_SWEEP_LEVEL");
-      double sl_wick = sweepLevel - (result.atrValue * 0.1); // Small buffer
-      double sl_atr  = result.entryPrice - (result.atrValue * 1.5);
-      
-      result.stopLoss = sl_wick;
-      if(MathAbs(result.entryPrice - result.stopLoss) > (result.atrValue * 1.5))
-      {
-          result.stopLoss = result.entryPrice - (result.atrValue * 1.5);
-      }
-      
-      result.takeProfit = result.entryPrice + (result.entryPrice - result.stopLoss) * XAU_RR_TARGET;
-      
-      double rsi_val = 0.0;
-      {
-         double r_buf[]; 
-         int h = iRSI(_Symbol, PERIOD_M1, XAU_RSI_PERIOD, PRICE_CLOSE);
-         CopyBuffer(h, 0, 1, 1, r_buf);
-         rsi_val = r_buf[0];
-      }
-      
-      result.reason = "MB:OK | L1:EMA+VWAP | L2:Sweep@" + DoubleToString(result.stopLoss, 2)
-                      + " | L3:RSI" + DoubleToString(rsi_val, 1);
-      return(result);
-     }
-   else 
-     {
-      // Debug rejection reason for BUY
-      // Print debug if sweep detected (L2) OR if we are in tester and L3 triggered
-      if(b_l2 || b_l3) 
-        {
-         Print("DEBUG BUY REJECT: Macro=",b_macro," L1=",b_l1," L2=",b_l2," L3=",b_l3);
-        }
-     }
-     
-   // 4. Test SELL
-   bool s_macro = CheckMacroBias(XAU_SELL);
-   bool s_l1    = CheckLock1(XAU_SELL);
-   bool s_l2    = CheckLock2(XAU_SELL);
-   bool s_l3    = CheckLock3(XAU_SELL);
-
-   // Force Override in Test Mode (REVERTED FOR REAL LOGIC)
-   if(g_CoreTestMode > 0.5)
+   // 3. BUY SIGNAL: The "Spring" Pattern
+   // Price dipped below the local low (Sweep) and closed back above it
+   if(rates[1].low < localLow && rates[1].close > localLow && rsi < 45)
    {
-       // s_macro = true; // Still bypass macro
-       // s_l1 = true; // Reverted
-       // s_l3 = true; // Reverted
-       if(s_l2) Print("TEST MODE: Macro Bypass Only. Sweep found.");
+       res.signal = XAU_BUY;
+       res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+       res.stopLoss = localLow - (res.atrValue * 0.1); // Just below sweep
+       res.takeProfit = res.entryPrice + (res.entryPrice - res.stopLoss) * 2.0;
+       res.reason = "Sweep_Spring_L2";
+   }
+   
+   // 4. SELL SIGNAL: The "Upthrust" Pattern
+   // Price spiked above the local high (Sweep) and closed back below it
+   else if(rates[1].high > localHigh && rates[1].close < localHigh && rsi > 55)
+   {
+       res.signal = XAU_SELL;
+       res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+       res.stopLoss = localHigh + (res.atrValue * 0.1); // Just above sweep
+       res.takeProfit = res.entryPrice - (res.stopLoss - res.entryPrice) * 2.0;
+       res.reason = "Sweep_Upthrust_L2";
    }
 
-   if(s_macro && s_l1 && s_l2 && s_l3)
-     {
-      result.signal = XAU_SELL;
-      result.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-      
-      double atr_buf[];
-      int h_atr = iATR(_Symbol, PERIOD_CURRENT, XAU_ATR_PERIOD);
-      CopyBuffer(h_atr, 0, 1, 1, atr_buf);
-      result.atrValue = atr_buf[0];
-      
-      double sweepLevel = GlobalVariableGet("XAU_SWEEP_LEVEL");
-      double sl_wick = sweepLevel + (result.atrValue * 0.1);
-      
-      result.stopLoss = sl_wick;
-      if(MathAbs(result.stopLoss - result.entryPrice) > (result.atrValue * 1.5))
-      {
-          result.stopLoss = result.entryPrice + (result.atrValue * 1.5);
-      }
-      
-      result.takeProfit = result.entryPrice - (result.stopLoss - result.entryPrice) * XAU_RR_TARGET;
-      
-      double rsi_val = 0.0;
-      {
-         double r_buf[]; 
-         int h = iRSI(_Symbol, PERIOD_M1, XAU_RSI_PERIOD, PRICE_CLOSE);
-         CopyBuffer(h, 0, 1, 1, r_buf);
-         rsi_val = r_buf[0];
-      }
-      
-      result.reason = "MB:OK | L1:EMA+VWAP | L2:Sweep@" + DoubleToString(result.stopLoss, 2)
-                      + " | L3:RSI" + DoubleToString(rsi_val, 1);
-      return(result);
-     }
-   else
-     {
-      // Debug rejection reason for SELL
-      // Print debug if sweep detected (L2) OR if we are in tester and L3 triggered
-      if(s_l2 || s_l3) 
-        {
-         Print("DEBUG SELL REJECT: Macro=",s_macro," L1=",s_l1," L2=",s_l2," L3=",s_l3);
-        }
-     }
-     
-   return(result);
+   return res;
   }
 
 /**
