@@ -527,17 +527,17 @@ XAU_SignalResult EvaluateSignal()
    CopyBuffer(h_atr, 0, 1, 1, atr_buf);
    res.atrValue = atr_buf[0];
 
-   // 2. Identify Local Liquidity Zones (Looking back 25 bars)
+   // 2. Identify Local Liquidity Zones (Looking back 15 bars for Micro-Sweeps)
    double localLow = rates[1].low;
    double localHigh = rates[1].high;
-   for(int i=2; i<25; i++) {
+   for(int i=2; i<15; i++) {
        if(rates[i].low < localLow) localLow = rates[i].low;
        if(rates[i].high > localHigh) localHigh = rates[i].high;
    }
 
    // 3. BUY SIGNAL: The "Spring" Pattern
    // Price dipped below the local low (Sweep) and closed back above it
-   if(rates[1].low < localLow && rates[1].close > localLow && rsi < 45)
+   if(rates[1].low < localLow && rates[1].close > localLow && rsi < 50)
    {
        res.signal = XAU_BUY;
        res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
@@ -549,7 +549,7 @@ XAU_SignalResult EvaluateSignal()
    
    // 4. SELL SIGNAL: The "Upthrust" Pattern
    // Price spiked above the local high (Sweep) and closed back below it
-   else if(rates[1].high > localHigh && rates[1].close < localHigh && rsi > 55)
+   else if(rates[1].high > localHigh && rates[1].close < localHigh && rsi > 50)
    {
        res.signal = XAU_SELL;
        res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
