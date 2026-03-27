@@ -99,7 +99,7 @@ bool CheckMacroBias(ENUM_XAU_SIGNAL dir)
    }
 
    // 3. Higher Timeframe Structure (M15)
-   if(!GlobalVariableGet("XAU_USE_TREND_FILTER"))
+   if(GlobalVariableGet("XAU_USE_TREND_FILTER") < 0.5)
    {
        // If trend filter is disabled via EA inputs, skip macro structure check
        return(true);
