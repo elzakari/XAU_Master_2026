@@ -535,33 +535,41 @@ XAU_SignalResult EvaluateSignal()
        if(rates[i].high > localHigh) localHigh = rates[i].high;
    }
 
+   // Recalculate local liquidity zones excluding the signal bar to detect sweeps
+   double prevLow = rates[2].low;
+   double prevHigh = rates[2].high;
+   for(int i=3; i<15; i++) {
+       if(rates[i].low < prevLow) prevLow = rates[i].low;
+       if(rates[i].high > prevHigh) prevHigh = rates[i].high;
+   }
+
    // 3. BUY SIGNAL: The "Spring" Pattern
    // Price dipped below the local low (Sweep) and closed back above it
-   if(rates[1].low < localLow && rates[1].close > localLow && rsi < 50)
+   if(rates[1].low < prevLow && rates[1].close > prevLow && rsi < 50)
    {
        res.signal = XAU_BUY;
        res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-       res.stopLoss = localLow - (res.atrValue * 0.1); // Just below sweep
+       res.stopLoss = rates[1].low - (res.atrValue * 0.1); // Just below sweep
        res.takeProfit = res.entryPrice + (res.entryPrice - res.stopLoss) * 2.0;
        res.reason = "Sweep_Spring_L2";
-       Print("AGGRESSIVE BUY SIGNAL TRIGGERED: RSI=", rsi, " SweepLow=", localLow);
+       Print("AGGRESSIVE BUY SIGNAL TRIGGERED: RSI=", rsi, " SweepLow=", prevLow);
    }
    
    // 4. SELL SIGNAL: The "Upthrust" Pattern
    // Price spiked above the local high (Sweep) and closed back below it
-   else if(rates[1].high > localHigh && rates[1].close < localHigh && rsi > 50)
+   else if(rates[1].high > prevHigh && rates[1].close < prevHigh && rsi > 50)
    {
        res.signal = XAU_SELL;
        res.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-       res.stopLoss = localHigh + (res.atrValue * 0.1); // Just above sweep
+       res.stopLoss = rates[1].high + (res.atrValue * 0.1); // Just above sweep
        res.takeProfit = res.entryPrice - (res.stopLoss - res.entryPrice) * 2.0;
        res.reason = "Sweep_Upthrust_L2";
-       Print("AGGRESSIVE SELL SIGNAL TRIGGERED: RSI=", rsi, " SweepHigh=", localHigh);
+       Print("AGGRESSIVE SELL SIGNAL TRIGGERED: RSI=", rsi, " SweepHigh=", prevHigh);
    }
    else 
    {
        // Debug print so we can see what the scanner is seeing on every bar
-       // Print("Scanner Active: RSI=", rsi, " Low=", rates[1].low, " LocalLow=", localLow, " High=", rates[1].high, " LocalHigh=", localHigh);
+       // Print("Scanner Active: RSI=", rsi, " Low=", rates[1].low, " LocalLow=", prevLow, " High=", rates[1].high, " LocalHigh=", prevHigh);
    }
 
    return res;
