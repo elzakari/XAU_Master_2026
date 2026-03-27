@@ -199,25 +199,28 @@ bool CheckLock1(ENUM_XAU_SIGNAL dir)
        if(dir == XAU_SELL && ema_fast_val >= ema_slow_val) return(false);
    }
 
-   // 3. VWAP Position
-   double vwap = GlobalVariableGet("XAU_DAILY_VWAP");
-   if(vwap == 0.0)
-     {
-      Print("CheckLock1: VWAP not yet calculated.");
-      return(false);
-     }
-
-   // Get Close[1] for VWAP check
-   MqlRates rates[1];
-   if(CopyRates(_Symbol, PERIOD_M5, 1, 1, rates) < 1)
-     {
-      Print("CheckLock1: Failed to get Close[1].");
-      return(false);
-     }
-   double close_1 = rates[0].close;
-
-   if(dir == XAU_BUY && close_1 <= vwap) return(false);
-   if(dir == XAU_SELL && close_1 >= vwap) return(false);
+   // 3. VWAP Position (Skip if trend filter is disabled to allow mean reversion)
+   if(use_trend)
+   {
+       double vwap = GlobalVariableGet("XAU_DAILY_VWAP");
+       if(vwap == 0.0)
+         {
+          Print("CheckLock1: VWAP not yet calculated.");
+          return(false);
+         }
+    
+       // Get Close[1] for VWAP check
+       MqlRates rates[1];
+       if(CopyRates(_Symbol, PERIOD_M5, 1, 1, rates) < 1)
+         {
+          Print("CheckLock1: Failed to get Close[1].");
+          return(false);
+         }
+       double close_1 = rates[0].close;
+    
+       if(dir == XAU_BUY && close_1 <= vwap) return(false);
+       if(dir == XAU_SELL && close_1 >= vwap) return(false);
+   }
 
    // 4. Psychological Level Detection
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -542,19 +545,6 @@ XAU_SignalResult EvaluateSignal()
       double sl_wick = sweepLevel - (result.atrValue * 0.1); // Small buffer
       double sl_atr  = result.entryPrice - (result.atrValue * 1.5);
       
-      // Use the one that is further away (Safer) or closer?
-      // "1.5x ATR or just past swing wick" usually means "whichever makes sense".
-      // Usually you want the tighter stop if the structure holds.
-      // But if the wick is very close (e.g. 2 pips), you'll get stopped by noise.
-      // So we should take the MINIMUM distance (closer stop) provided it's safe?
-      // No, usually "Hard stop at 1.5x ATR" is the max risk. "Just past wick" is the structure stop.
-      // If Wick is further than 1.5x ATR, trade is invalid (too wide).
-      // If Wick is closer, use Wick.
-      // But prompt says "1.5x ATR OR past wick".
-      // I will use: SL = Wick (with buffer). If (Entry - SL) > 1.5 ATR, clamp to 1.5 ATR?
-      // Or if Wick is too close (< 0.5 ATR), use 1.5 ATR?
-      // Let's implement: Use Wick-based SL. If distance > 1.5 ATR, clamp it.
-      
       result.stopLoss = sl_wick;
       if(MathAbs(result.entryPrice - result.stopLoss) > (result.atrValue * 1.5))
       {
@@ -578,7 +568,8 @@ XAU_SignalResult EvaluateSignal()
    else 
      {
       // Debug rejection reason for BUY
-      if(b_l2) // Only print if sweep detected but filtered
+      // Print debug if sweep detected (L2) OR if we are in tester and L3 triggered
+      if(b_l2 || b_l3) 
         {
          Print("DEBUG BUY REJECT: Macro=",b_macro," L1=",b_l1," L2=",b_l2," L3=",b_l3);
         }
@@ -635,7 +626,8 @@ XAU_SignalResult EvaluateSignal()
    else
      {
       // Debug rejection reason for SELL
-      if(s_l2) // Only print if sweep detected but filtered
+      // Print debug if sweep detected (L2) OR if we are in tester and L3 triggered
+      if(s_l2 || s_l3) 
         {
          Print("DEBUG SELL REJECT: Macro=",s_macro," L1=",s_l1," L2=",s_l2," L3=",s_l3);
         }
